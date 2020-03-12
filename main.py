@@ -84,23 +84,36 @@ def uploadPhotoFile(dir_path, file_path):
     if datetimestr is not None:
         if "MakerNote" in exif_table:
           exif_table.pop("MakerNote")
-        datetimeobj = datetime.datetime.strptime(datetimestr, '%Y:%m:%d %H:%M:%S')
+        datetimeobj = None
+        try:
+            datetimeobj = datetime.datetime.strptime(datetimestr, '%Y:%m:%d %H:%M:%S')
+        except ValueError:
+            return
         timestamp = datetimeobj.timestamp()
-        maker = exif_table.get("Make")
-        model = exif_table.get("Model")
+        maker = exif_table.get("Make", "")
+        model = exif_table.get("Model", "")
         gpsinfo = exif_table.get("GPSInfo")
-        lon = int(gpsinfo[4][0][0]) +\
-            float(gpsinfo[4][1][0]) /60 +\
-            (float(gpsinfo[4][2][0])/float(gpsinfo[4][2][1])) /3600
-        lat = int(gpsinfo[2][0][0]) +\
-            float(gpsinfo[2][1][0]) /60 +\
-            (float(gpsinfo[2][2][0])/float(gpsinfo[2][2][1])) /3600
+        lonstr = ""
+        latstr = ""
+        try:
+            lon = int(gpsinfo[4][0][0]) +\
+                float(gpsinfo[4][1][0]) /60 +\
+                (float(gpsinfo[4][2][0])/float(gpsinfo[4][2][1])) /3600
+            lonstr = "#lon_"+str(lon)
+            lat = int(gpsinfo[2][0][0]) +\
+                float(gpsinfo[2][1][0]) /60 +\
+                (float(gpsinfo[2][2][0])/float(gpsinfo[2][2][1])) /3600
+            latstr = "#lat_"+str(lat)
+        except TypeError:
+            pass
+        except KeyError:
+            pass
         title = u"{}, {}".format(maker, model)
-        desc = u"{} {} {} {}".format(
+        desc = u"#photo_gyazo {} {} {} {}".format(
             "#"+maker.replace(" ", "_"),
             "#"+model.replace(" ", "_"),
-            "#lon_"+str(lon),
-            "#lat_"+str(lat))
+            lonstr,
+            latstr)
         print(title)
         print(desc)
         output = io.BytesIO()
