@@ -1,4 +1,4 @@
-
+# coding:utf-8
 import os
 import json
 import platform
@@ -51,7 +51,7 @@ def uploadGyazo(file_name, imagedata, content_type, title, url, desc, timestamp)
         'created_at': timestamp,
         'metadata': json.dumps(metadata)
     }
-
+    print(formdata)
     gyazo_res = requests.post("https://upload.gyazo.com/upload.cgi", data=formdata, files=files)
     print(gyazo_res)
     print(gyazo_res.text)
@@ -63,63 +63,75 @@ from PIL.ExifTags import TAGS
 def uploadPhotoFile(dir_path, file_path):
     image_path = os.path.join(dir_path, file_path)
     file_name = os.path.basename(file_path)
+    file_format = "JPEG"
+    if (image_path.endswith("png")):
+        file_format = "PNG"
+    elif not (image_path.endswith("jpeg") or image_path.endswith("jpg")):
+        return
+    print(image_path)
+    exif = None
     try:
         image = Image.open(image_path)
         try:
             exif = image._getexif()
         except AttributeError:
-            return
+            exif = None
     except IOError:
         return
 
-    if exif is None:
-        return
+    title = None
+    desc = "#photo_gyazo #include_no_exif"
+    datefloat = os.stat(image_path).st_ctime
+    datetimeobj = datetime.datetime.fromtimestamp(datefloat)
+    timestamp = int(datetimeobj.timestamp())
+    if exif is not None:
+        exif_table = {}
+        for tag_id, value in exif.items():
+            tag_key = TAGS.get(tag_id, tag_id)
+            exif_table[tag_key] = value
+        datetimestr = exif_table.get("DateTimeOriginal")
+        print(datetimestr)
+        if datetimestr is not None:
+            if "MakerNote" in exif_table:
+                exif_table.pop("MakerNote")
+            datetimeobj = None
+            try:
+                datetimeobj = datetime.datetime.strptime(datetimestr, '%Y:%m:%d %H:%M:%S')
+            except ValueError:
+                return
+            maker = exif_table.get("Make", "")
+            model = exif_table.get("Model", "")
+            gpsinfo = exif_table.get("GPSInfo")
+            lonstr = ""
+            latstr = ""
+            try:
+                lon = int(gpsinfo[4][0][0]) +\
+                    float(gpsinfo[4][1][0]) /60 +\
+                    (float(gpsinfo[4][2][0])/float(gpsinfo[4][2][1])) /3600
+                lonstr = "#lon_"+str(lon)
+                lat = int(gpsinfo[2][0][0]) +\
+                    float(gpsinfo[2][1][0]) /60 +\
+                    (float(gpsinfo[2][2][0])/float(gpsinfo[2][2][1])) /3600
+                latstr = "#lat_"+str(lat)
+            except TypeError:
+                pass
+            except KeyError:
+                pass
+            timestamp = datetimeobj.timestamp()
+            title = u"{}, {}".format(maker, model)
+            desc = u"#photo_gyazo {} {} {} {}".format(
+                "#"+maker.replace(" ", "_"),
+                "#"+model.replace(" ", "_"),
+                lonstr,
+                latstr)
 
-    exif_table = {}
-    for tag_id, value in exif.items():
-        tag_key = TAGS.get(tag_id, tag_id)
-        exif_table[tag_key] = value
-    datetimestr = exif_table.get("DateTimeOriginal")
-    print(datetimestr)
-    if datetimestr is not None:
-        if "MakerNote" in exif_table:
-          exif_table.pop("MakerNote")
-        datetimeobj = None
-        try:
-            datetimeobj = datetime.datetime.strptime(datetimestr, '%Y:%m:%d %H:%M:%S')
-        except ValueError:
-            return
-        timestamp = datetimeobj.timestamp()
-        maker = exif_table.get("Make", "")
-        model = exif_table.get("Model", "")
-        gpsinfo = exif_table.get("GPSInfo")
-        lonstr = ""
-        latstr = ""
-        try:
-            lon = int(gpsinfo[4][0][0]) +\
-                float(gpsinfo[4][1][0]) /60 +\
-                (float(gpsinfo[4][2][0])/float(gpsinfo[4][2][1])) /3600
-            lonstr = "#lon_"+str(lon)
-            lat = int(gpsinfo[2][0][0]) +\
-                float(gpsinfo[2][1][0]) /60 +\
-                (float(gpsinfo[2][2][0])/float(gpsinfo[2][2][1])) /3600
-            latstr = "#lat_"+str(lat)
-        except TypeError:
-            pass
-        except KeyError:
-            pass
-        title = u"{}, {}".format(maker, model)
-        desc = u"#photo_gyazo {} {} {} {}".format(
-            "#"+maker.replace(" ", "_"),
-            "#"+model.replace(" ", "_"),
-            lonstr,
-            latstr)
-        print(title)
-        print(desc)
-        output = io.BytesIO()
-        image.save(output, "JPEG")
-        uploadGyazo(file_name, output.getvalue(), "image/jpeg", title, None, desc, timestamp)
-
+    print(title)
+    print(desc)
+    print(timestamp)
+    output = io.BytesIO()
+    image.save(output, file_format)
+    uploadGyazo(file_name, output.getvalue(), "image/jpeg", title, None, desc, timestamp)
+    
 
 def uploadPhotoFileFromDir(dir_path, recursive):
     dir_path = os.path.abspath(dir_path)
