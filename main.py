@@ -106,6 +106,21 @@ def getInfoFromExif(exif):
             latstr)
     return title, desc, timestamp
 
+def getInfoFromExifOrFilePath(image_path):
+    exif = None
+    try:
+        image = Image.open(image_path)
+        try:
+            exif = image._getexif()
+        except AttributeError:
+            exif = None
+    except IOError:
+        return
+    title, desc, timestamp = getInfoFromFilePath(image_path)
+    if exif is not None:
+        title, desc, timestamp = getInfoFromExif(exif)
+    return title, desc, timestamp
+
 import io
 import datetime
 from PIL import Image
@@ -119,20 +134,9 @@ def uploadPhotoFile(dir_path, file_path):
     elif not (image_path.endswith("jpeg") or image_path.endswith("jpg")):
         return
     print(image_path)
-    exif = None
-    try:
-        image = Image.open(image_path)
-        try:
-            exif = image._getexif()
-        except AttributeError:
-            exif = None
-    except IOError:
-        return
 
+    title, desc, timestamp = getInfoFromExifOrFilePath(image_path)
 
-    title, desc, timestamp = getInfoFromFilePath(image_path)
-    if exif is not None:
-        title, desc, timestamp = getInfoFromExif(exif)
     output = io.BytesIO()
     image.save(output, file_format)
     uploadGyazo(file_name, output.getvalue(), "image/jpeg", title, None, desc, timestamp)
