@@ -20,3 +20,17 @@ class MainTest(unittest.TestCase):
         self.assertEqual(title, "Apple, iPhone SE")
         self.assertEqual(desc, "#photo_gyazo #Apple #iPhone_SE  ")
         self.assertEqual(timestamp, 1583283648.0)
+    
+    def test_getInfoFromExifOrFilePath(self):
+        image_path = os.path.abspath("test/test.jpg")
+        title, desc, timestamp = main.getInfoFromExifOrFilePath(image_path)
+        self.assertEqual(title,"Apple, iPhone SE")
+        self.assertEqual(desc, "#photo_gyazo #Apple #iPhone_SE  ")
+        self.assertEqual(timestamp, 1583283648.0)
+
+    def test_getInfoFromExifOrFilePath(self):
+        image_path = os.path.abspath("test/test_with_noexif.jpeg")
+        title, desc, timestamp = main.getInfoFromExifOrFilePath(image_path)
+        self.assertEqual(title, None)
+        self.assertEqual(desc, "#photo_gyazo #include_no_exif")
+        self.assertEqual(timestamp, 1585889318)
