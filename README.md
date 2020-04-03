@@ -6,4 +6,5 @@
 
 ## Development
 
-`python -m unittest test_main.py`
+`docker-compose build`
+`docker-compose run app python -m unittest test_main.py`
