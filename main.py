@@ -114,8 +114,8 @@ def getInfoFromExifOrFilePath(image_path):
             exif = image._getexif()
         except AttributeError:
             exif = None
-    except IOError:
-        return
+    except Exception:
+        pass
     title, desc, timestamp = getInfoFromFilePath(image_path)
     if exif is not None:
         title, desc, timestamp = getInfoFromExif(exif)
@@ -125,20 +125,28 @@ import io
 import datetime
 from PIL import Image
 from PIL.ExifTags import TAGS
-def uploadPhotoFile(dir_path, file_path):
-    image_path = os.path.join(dir_path, file_path)
-    file_name = os.path.basename(file_path)
+from PIL import UnidentifiedImageError
+def checkFileFormat(image_path):
     file_format = "JPEG"
     if (image_path.endswith("png")):
         file_format = "PNG"
     elif not (image_path.endswith("jpeg") or image_path.endswith("jpg")):
         return
+    return file_format
+
+def uploadPhotoFile(dir_path, file_path):
+    image_path = os.path.join(dir_path, file_path)
+    file_name = os.path.basename(file_path)
+    file_format = checkFileFormat(image_path)
     print(image_path)
 
     title, desc, timestamp = getInfoFromExifOrFilePath(image_path)
 
     output = io.BytesIO()
-    Image.open(image_path).save(output, file_format)
+    try:
+        Image.open(image_path).save(output, file_format)
+    except Exception:
+        return
     uploadGyazo(file_name, output.getvalue(), "image/jpeg", title, None, desc, timestamp)
     
 
