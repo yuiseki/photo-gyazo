@@ -138,7 +138,7 @@ def uploadPhotoFile(dir_path, file_path):
     title, desc, timestamp = getInfoFromExifOrFilePath(image_path)
 
     output = io.BytesIO()
-    image.save(output, file_format)
+    Image.open(image_path).save(output, file_format)
     uploadGyazo(file_name, output.getvalue(), "image/jpeg", title, None, desc, timestamp)
     
 
