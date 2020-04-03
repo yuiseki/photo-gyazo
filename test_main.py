@@ -34,3 +34,14 @@ class MainTest(unittest.TestCase):
         self.assertEqual(title, None)
         self.assertEqual(desc, "#photo_gyazo #include_no_exif")
         self.assertEqual(timestamp, 1585900154)
+
+
+    def test_checkFileFormat(self):
+        image_path = os.path.abspath("test/test_with_exif.jpg")
+        newer_file_format = main.checkFileFormat(image_path)
+        if (image_path.endswith("jpg") or image_path.endswith("jpeg")):
+            self.assertEqual(newer_file_format, "JPEG")
+        elif(image_path.endswith("png")):
+            self.assertEqual(newer_file_format, "PNG")
+        else:
+            print("not a image file")
