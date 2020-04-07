@@ -71,6 +71,9 @@ def getInfoFromExif(exif):
         exif_table[tag_key] = value
     datetimestr = exif_table.get("DateTimeOriginal")
     print(datetimestr)
+    title = None
+    desc = "#photo_gyazo #include_no_DateTimeOriginal"
+    timestamp = None
     if datetimestr is not None:
         if "MakerNote" in exif_table:
             exif_table.pop("MakerNote")
